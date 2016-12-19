@@ -17,6 +17,7 @@ local cv = require 'cv'
 require 'cv.videoio'
 require 'cv.imgproc'
 require 'sys'
+require 'lfs'
 local posix = require 'posix'
 
 
@@ -25,49 +26,56 @@ local function main()
  
   
 
-dataPathPre = '/home/snf/mohsen/UCF101/UCF-101/'
-spilitPathPre = '/home/snf/mohsen/UCF101/ucfTrainTestlist/'
-ucfSpilit = 'trainlist01.txt'
+  dataPathPre = '/home/snf/mohsen/UCF101/UCF-101/'
+  spilitPathPre = '/home/snf/mohsen/UCF101/ucfTrainTestlist/'
+  ucfSpilit = 'trainlist02.txt'
   
---fmeans = torch.load('fmeans.dat')
+    
+  --fmeans = torch.load('fmeans.dat')
  
-    inputData = {}
+  inputData = {}
     
 
-i = 0
-for line in io.lines(spilitPathPre..ucfSpilit) do
-	i = i+1
-	j = 0
-	inputData[i] = {}
-	tmp = {}
-	for splt in string.gmatch(line,"%S+") do
-		j = j+1
-		table.insert(tmp, splt)
-		if(j==1) then
-			inputData[i][j] = tmp[1]
+  i = 0
+  for line in io.lines(spilitPathPre..ucfSpilit) do
+    i = i+1
+    j = 0
+    inputData[i] = {}
+    tmp = {}
+    for splt in string.gmatch(line,"%S+") do
+      j = j+1
+      table.insert(tmp, splt)
+      if(j==1) then
+        inputData[i][j] = tmp[1]
 
-		else
-			inputData[i][j] = tonumber(tmp[2])
-		--	print(tmp[2])
-		end
-	end
-	--print(i)
-end
-trainSamples = i
+      else
+        inputData[i][j] = tonumber(tmp[2])
+      --	print(tmp[2])
+      end
+    end
+    --print(i)
+  end
+  trainSamples = i
 
 
-    trainList = {}
+  trainList = {}
     
-    numBatch = 16
-    cropSize = 112
-    newHeight = 128
-    newWidth = 171
+  numBatch = 16
+  cropSize = 112
+  newHeight = 128
+  newWidth = 171
     
     
-    print(trainSamples)
+  print(trainSamples)
 
-    trainList = {}
-    L = 0
+  trainList = {}
+  L = 0
+  
+  dir = 'clips/'.. ucfSpilit:sub(1,-4) ..'/'
+  if not (posix.stat(dir, "type") == 'directory') then
+    lfs.mkdir(dir)
+  end
+    
     
 for ln = 1,trainSamples do
       --ln = math.fmod(t-1,trainSamples) + 1
@@ -104,11 +112,11 @@ for ln = 1,trainSamples do
     print(nF)      
     for b=0,nF-1,numBatch do
 			
-      outFileC = 'clips/'..ln..'_'..label..'_'..(b)..'_C.avi'
+      outFileC = dir..ln..'_'..label..'_'..(b)..'_C.avi'
           
           writer = cv.VideoWriter{outFileC, FOURCC, FPS,frameSize={cropSize,cropSize}}
           
-        outFileF = 'clips/'..ln..'_'..label..'_'..(b)..'_F.avi'
+        outFileF = dir..ln..'_'..label..'_'..(b)..'_F.avi'
           
           writerF = cv.VideoWriter{outFileF, FOURCC, FPS,frameSize={cropSize,cropSize}}
       
@@ -157,7 +165,7 @@ for ln = 1,trainSamples do
 	
 end
 
-torch.save("trainList.t7",trainList)
+torch.save(ucfSpilit:sub(1,-4)..".t7",trainList)
 
 end
 main()
